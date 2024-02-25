@@ -128,6 +128,12 @@ function cancelPayments(people: People) {
       if (debt > owed) {
         people[name].owes[owes] -= owed;
         delete people[owes].owes[name];
+      } else if (debt < owed) {
+        people[owes].owes[name] -= debt;
+        delete people[name].owes[owes];
+      } else {
+        delete people[name].owes[owes];
+        delete people[owes].owes[name];
       }
     }
   }
