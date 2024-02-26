@@ -41,6 +41,7 @@ function removePerson(
 function addPayment(
   i: number,
   expandedPayments: Set<number>,
+  setExpandedPayments: any,
   payments: number,
   setPayments: any
 ) {
@@ -49,6 +50,7 @@ function addPayment(
     return;
   }
   expandedPayments.add(i);
+  setExpandedPayments(new Set(expandedPayments));
   setPayments(payments + 1);
 }
 
@@ -186,7 +188,7 @@ export default function Home() {
   const [currency, setCurrency] = useState("£");
   const [people, setPeople] = useState<People>({});
   const [payments, setPayments] = useState(1);
-  const expandedPayments = new Set<number>();
+  const [expandedPayments, setExpandedPayments] = useState(new Set<number>());
 
   return (
     <div className="grid place-items-center">
@@ -306,6 +308,7 @@ export default function Home() {
                             addPayment(
                               i,
                               expandedPayments,
+                              setExpandedPayments,
                               payments,
                               setPayments
                             );
