@@ -44,10 +44,11 @@ function addPayment(
   payments: number,
   setPayments: any
 ) {
-  // If this payment has already spawned a new payment, don't spawn another
+  // If this payment has already spawned a new payment entry, don't spawn another
   if (expandedPayments.has(i)) {
     return;
   }
+  expandedPayments.add(i);
   setPayments(payments + 1);
 }
 
