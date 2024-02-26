@@ -17,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Toggle } from "@/components/ui/toggle";
-import { format } from "path";
 import { useState } from "react";
 
 function addPerson(people: Record<string, any>, setPeople: any) {
@@ -149,7 +148,7 @@ function parseCurrency(value: string) {
 
 function formatCurrencyOnEntry(i: number, currency: string) {
   const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
-  if (amountEl.value !== "" && amountEl.value[0] !== currency) {
+  if (amountEl !== null && amountEl.value !== "" && amountEl.value[0] !== currency) {
     let value = amountEl.value.replace(/[$£€]/g, "");
     try {
       value = parseFloat(value).toString();
@@ -162,7 +161,7 @@ function formatCurrencyOnEntry(i: number, currency: string) {
 
 function formatCurrencyOnLeave(i: number, currency: string) {
   const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
-  if (amountEl.value !== "") {
+  if (amountEl !== null && amountEl.value !== "") {
     let value = amountEl.value.replace(/[$£€]/g, "");
     console.log(value)
     try {
@@ -350,7 +349,7 @@ export default function Home() {
                               onPressedChange={() =>
                                 processPayments(payments, people, setPeople)
                               }
-                              className="data-[state=on]:bg-[#f97316]"
+                              className="data-[state=on]:bg-[#f97316] hover:bg-transparent"
                             >
                               {name}
                             </Toggle>
