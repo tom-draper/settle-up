@@ -25,7 +25,6 @@ function addPerson(people: Record<string, any>, setPeople: any) {
     return;
   }
   people[name.value] = { spent: 0, owes: {} };
-  console.log(people);
   setPeople({ ...people });
   name.value = "";
 }
@@ -35,7 +34,6 @@ function removePerson(
   people: Record<string, any>,
   setPeople: any
 ) {
-  // remove name from person
   delete people[name];
   setPeople({ ...people });
 }
@@ -54,10 +52,9 @@ function addPayment(
 }
 
 function processPayments(payments: number, people: any, setPeople: any) {
-  const result: People = {};
-  for (let name in people) {
-    result[name] = { spent: 0, owes: {} };
-  }
+  const result: People = Object.fromEntries(
+    Object.keys(people).map((name) => [name, { spent: 0, owes: {} }])
+  );
 
   for (let i = 0; i < payments; i++) {
     const payeeContainer = document.getElementById(
@@ -100,7 +97,7 @@ function processPayments(payments: number, people: any, setPeople: any) {
       .filter((debtor) => debtor !== undefined);
 
     result[payee].spent += amount;
-    for (let debtor of debtors) {
+    for (const debtor of debtors) {
       if (debtor === undefined || debtor === payee || !(debtor in result)) {
         continue;
       }
@@ -116,13 +113,15 @@ function processPayments(payments: number, people: any, setPeople: any) {
 }
 
 function cancelPayments(people: People) {
-  for (let name in people) {
-    for (let owes in people[name].owes) {
+  for (const name in people) {
+    for (const owes in people[name].owes) {
       const debt = people[name].owes[owes];
       // If no debt exists the other way, leave debt untouched
       if (people[owes].owes[name] === undefined) {
         continue;
       }
+      // If debt is greater than owed amount, eliminate the owed amount from the 
+      // other person and subtract from the debt
       const owed = people[owes].owes[name];
       if (debt > owed) {
         people[name].owes[owes] -= owed;
@@ -148,28 +147,32 @@ function parseCurrency(value: string) {
 
 function formatCurrencyOnEntry(i: number, currency: string) {
   const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
-  if (amountEl !== null && amountEl.value !== "" && amountEl.value[0] !== currency) {
-    let value = amountEl.value.replace(/[$£€]/g, "");
-    try {
-      value = parseFloat(value).toString();
-      amountEl.value = `${currency}${value}`;
-    } catch (e) {
-      console.error(`Error parsing value: ${value}`, e);
-    }
+  if (
+    amountEl !== null &&
+    amountEl.value !== "" &&
+    amountEl.value[0] !== currency
+  ) {
+    updateWithFormattedCurrency(amountEl, currency);
   }
 }
 
 function formatCurrencyOnLeave(i: number, currency: string) {
   const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
   if (amountEl !== null && amountEl.value !== "") {
-    let value = amountEl.value.replace(/[$£€]/g, "");
-    console.log(value)
-    try {
-      value = parseFloat(value).toFixed(2);
-      amountEl.value = `${currency != '€' ? currency : ''}${value}${currency != '€' ? '' : currency}`;
-    } catch (e) {
-      console.error(`Error parsing value: ${value}`, e);
-    }
+    updateWithFormattedCurrency(amountEl, currency);
+  }
+}
+
+function updateWithFormattedCurrency(
+  amountEl: HTMLInputElement,
+  currency: string
+) {
+  let value = amountEl.value.replace(/[$£€]/g, "");
+  try {
+    value = parseFloat(value).toFixed(2);
+    amountEl.value = formatCurrency(value, currency);
+  } catch (e) {
+    console.error(`Error parsing value: ${value}`, e);
   }
 }
 
@@ -177,6 +180,12 @@ function reformatAllCurrencyInput(payments: number, currency: string) {
   for (let i = 0; i < payments; i++) {
     formatCurrencyOnLeave(i, currency);
   }
+}
+
+function formatCurrency(value: string, currency: string) {
+  return `${currency != "€" ? currency : ""}${value}${
+    currency != "€" ? "" : currency
+  }`;
 }
 
 type People = {
@@ -192,10 +201,13 @@ export default function Home() {
   return (
     <div className="grid place-items-center">
       <div className="absolute right-4 top-4">
-        <Select defaultValue="£" onValueChange={(e) => {
-          setCurrency(e);
-          reformatAllCurrencyInput(payments, e);
-        }}>
+        <Select
+          defaultValue="£"
+          onValueChange={(e) => {
+            setCurrency(e);
+            reformatAllCurrencyInput(payments, e);
+          }}
+        >
           <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>
@@ -215,8 +227,10 @@ export default function Home() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 addPerson(people, setPeople);
-                processPayments(payments, people, setPeople);
-                setPayments(payments);
+                // Wait for re-render to update the list of people before retrieving them from the DOM
+                setTimeout(() => {
+                  processPayments(payments, people, setPeople);
+                }, 0);
               }
             }}
           />
@@ -225,7 +239,10 @@ export default function Home() {
             className="ml-3"
             onClick={() => {
               addPerson(people, setPeople);
-              processPayments(payments, people, setPeople);
+              // Wait for re-render to update the list of people before retrieving them from the DOM
+              setTimeout(() => {
+                processPayments(payments, people, setPeople);
+              }, 0);
             }}
           >
             Submit
@@ -276,9 +293,12 @@ export default function Home() {
                         </Button>
                       </TableCell>
                       <TableCell>{name}</TableCell>
-                      <TableCell className="text-right pr-6">{`${currency != '€' ? currency : ''}${people[
-                        name
-                      ].spent.toFixed(2)}${currency != '€' ? '' : currency}`}</TableCell>
+                      <TableCell className="text-right pr-6">
+                        {formatCurrency(
+                          people[name].spent.toFixed(2),
+                          currency
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -289,47 +309,51 @@ export default function Home() {
               {Array.from({ length: payments }).map((_, i) => (
                 <div key={i} className="my-4">
                   <div className="flex">
-
-                    <div className='flex max-sm:flex-col'>
-
-                    <div className="mt-5">
-                      <Select
-                        onValueChange={() => {
-                          addPayment(
-                            i,
-                            expandedPayments,
-                            payments,
-                            setPayments
-                          );
-                          processPayments(payments, people, setPeople);
-                        }}
-                      >
-                        <SelectTrigger className="w-[180px] max-sm:w-[100px]">
-                          <SelectValue placeholder={<span className="text-muted-foreground">Payee</span>} id={`payee-${i}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.keys(people).map((name, i) => (
-                            <SelectItem key={i} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="mx-2 grid mt-5 max-sm:ml-0 max-sm:mt-2">
-                      <Input
-                        placeholder={`${currency !== '€' ? currency : ''}0.00${currency !== '€' ? '' : currency}`}
-                        className="w-24 max-sm:w-[100px]"
-                        prefix="hello"
-                        onChange={() => {
-                          processPayments(payments, people, setPeople);
-                          formatCurrencyOnEntry(i, currency);
-                        }}
-                        onBlur={() => formatCurrencyOnLeave(i, currency)}
-                        id={`amount-${i}`}
-                      />
-                    </div>
-
+                    <div className="flex max-sm:flex-col">
+                      <div className="mt-5">
+                        <Select
+                          onValueChange={() => {
+                            addPayment(
+                              i,
+                              expandedPayments,
+                              payments,
+                              setPayments
+                            );
+                            processPayments(payments, people, setPeople);
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px] max-sm:w-[100px]">
+                            <SelectValue
+                              placeholder={
+                                <span className="text-muted-foreground">
+                                  Payee
+                                </span>
+                              }
+                              id={`payee-${i}`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(people).map((name, i) => (
+                              <SelectItem key={i} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="mx-2 grid mt-5 max-sm:ml-0 max-sm:mt-2">
+                        <Input
+                          placeholder={formatCurrency("0.00", currency)}
+                          className="w-24 max-sm:w-[100px]"
+                          prefix="hello"
+                          onChange={() => {
+                            processPayments(payments, people, setPeople);
+                            formatCurrencyOnEntry(i, currency);
+                          }}
+                          onBlur={() => formatCurrencyOnLeave(i, currency)}
+                          id={`amount-${i}`}
+                        />
+                      </div>
                     </div>
                     <div>
                       <div className="text-xs mb-1 text-left text-muted-foreground">
@@ -374,8 +398,7 @@ export default function Home() {
                     {name} owes
                     {Object.entries(value.owes).map(([name, amount], i) => (
                       <div key={i} className="ml-4 text-muted-foreground">
-                        {name}: {currency !== '€' ? currency : ''}
-                        {amount.toFixed(2)}{currency !== '€' ? '' : currency}
+                        {name}: {formatCurrency(amount.toFixed(2), currency)}
                       </div>
                     ))}
                   </div>
