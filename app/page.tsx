@@ -146,17 +146,6 @@ function parseCurrency(value: string) {
   }
 }
 
-function formatCurrencyOnEntry(i: number, currency: string) {
-  const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
-  if (
-    amountEl !== null &&
-    amountEl.value !== "" &&
-    amountEl.value[0] !== currency
-  ) {
-    updateWithFormattedCurrency(amountEl, currency);
-  }
-}
-
 function formatCurrencyOnLeave(i: number, currency: string) {
   const amountEl = document.getElementById(`amount-${i}`) as HTMLInputElement;
   if (amountEl !== null && amountEl.value !== "") {
@@ -349,7 +338,6 @@ export default function Home() {
                           prefix="hello"
                           onChange={() => {
                             processPayments(payments, people, setPeople);
-                            formatCurrencyOnEntry(i, currency);
                           }}
                           onBlur={() => formatCurrencyOnLeave(i, currency)}
                           id={`amount-${i}`}
