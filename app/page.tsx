@@ -59,6 +59,7 @@ function processPayments(payments: number, people: any, setPeople: any) {
     Object.keys(people).map((name) => [name, { spent: 0, owes: {} }])
   );
 
+  console.log(payments)
   for (let i = 0; i < payments; i++) {
     const payeeContainer = document.getElementById(
       `payee-${i}`
@@ -106,7 +107,7 @@ function processPayments(payments: number, people: any, setPeople: any) {
       }
 
       result[debtor].owes[payee] ||= 0;
-      result[debtor].owes[payee] = amount / debtors.length;
+      result[debtor].owes[payee] += amount / debtors.length;
     }
   }
 
