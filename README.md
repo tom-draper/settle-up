@@ -1,6 +1,6 @@
 # Settle Up
 
-A simple web-app for tallying up money owed between friends.
+A simple Next.js web-app for tallying up money owed between friends.
 
 Hosted at: https://settleup.vercel.app
 
